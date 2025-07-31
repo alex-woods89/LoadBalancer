@@ -17,7 +17,9 @@ namespace LoadBalancer.Services
         {
             var healthy = new List<BackendNode>();
 
-            foreach(var node in nodes.Where(n => !n.MaintenanceMode))
+            nodes = FilterMaintenanceMode(nodes);
+
+            foreach (var node in nodes)
             {
                 if (await _tcpClientFactory.TryConnectAsync(node.Host, node.Port, _timeoutMs, ct))
                 {
@@ -27,5 +29,7 @@ namespace LoadBalancer.Services
 
             return healthy;
         }
+
+        private List<BackendNode> FilterMaintenanceMode(List<BackendNode> nodes) => nodes.Where(n => !n.MaintenanceMode).ToList();
     }
 }
