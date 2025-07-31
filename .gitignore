@@ -1,0 +1,62 @@
+# Build Folders
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+
+# VS 
+.vscode/
+.vs/
+
+# ASP.NET/Entity Framework generated files
+*.dbmdl
+*.jfm
+
+# NuGet
+*.nupkg
+# NuGet packages folder - comment if using package restore
+packages/
+
+# Visual Studio logs
+*.tlog
+*.log
+
+# DotNet-specific
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Coverage / Test Results
+TestResults/
+*.coverage
+*.coveragexml
+*.vspx
+*.vsp
+
+# Other
+*.tmp
+*.bak
+*.swp
+*.orig
+
+# System files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+
+# Linux
+*~
+
+# Windows
+*.lnk
