@@ -47,6 +47,8 @@ namespace LoadBalancer
                     if(listener.Pending())
                     {
                         var client = await listener.AcceptTcpClientAsync();
+                        _logger.LogInformation("Accepted connection from {clientEndpoint}.", client.Client.RemoteEndPoint);
+
                         _ = Task.Run(() => HandleClientAsync(client, ct), ct);
                     }
                     else
@@ -78,7 +80,7 @@ namespace LoadBalancer
 
                     _healthyBackends = healthyNodes.ToList();
 
-                    _logger.LogInformation($"Healthy backends updated: {_healthyBackends.Count} nodes available.");
+                    _logger.LogInformation("Healthy backends updated: {count} nodes available.", _healthyBackends.Count);
                 }
                 catch (Exception ex)
                 {
@@ -104,7 +106,7 @@ namespace LoadBalancer
             try
             {
                 await backendClient.ConnectAsync(backend.Host, backend.Port);
-                _logger.LogInformation($"Forwarding request to backend {backend.Host}:{backend.Port}");
+                _logger.LogInformation("Forwarding request to backend {host}:{port}", backend.Host, backend.Port);
 
                 using var clientStream = client.GetStream();
                 using var backendStream = backendClient.GetStream();
@@ -114,7 +116,7 @@ namespace LoadBalancer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error handling client request for backend {backend.Host}:{backend.Port}");
+                _logger.LogError(ex, "Error handling client request for backend  {host}:{port}", backend.Host, backend.Port);
             }
             finally
             {
