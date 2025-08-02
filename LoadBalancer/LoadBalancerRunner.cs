@@ -1,4 +1,5 @@
-﻿using LoadBalancer.Interfaces;
+﻿using LoadBalancer.Factories;
+using LoadBalancer.Interfaces;
 using LoadBalancer.Models;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -6,29 +7,35 @@ using System.Net.Sockets;
 
 namespace LoadBalancer
 {
-    //TODO this class isnt super testable at the moment, need to find a way to inject and mock the TcpListener and TcpClient
-    public class LoadBalancerRunner
+    public class LoadBalancerRunner : ILoadBalancerRunner
     {
         private readonly IHealthChecker _healthChecker;
         private readonly IRoutingStrategy _routingStrategy;
         private readonly ILogger<LoadBalancerRunner> _logger;
-        private  List<BackendNode> _allBackends;
-        private int _healthCheckLoopDelay;
         private readonly IConfiguration _config;
-        private volatile List<BackendNode> _healthyBackends = [];
-        private int _listenPort { get; set; } 
+        private readonly ITcpClientFactory _tcpClientFactory;
+        private readonly ITcpListenerFactory _tcpListenerFactory;
 
-        public LoadBalancerRunner(IHealthChecker healthChecker, IRoutingStrategy routingStrategy, ILogger<LoadBalancerRunner> logger, IConfiguration config)
+        private int _healthCheckLoopDelay;
+
+        private readonly List<BackendNode> _allBackends;
+        private volatile List<BackendNode> _healthyBackends = [];
+        private int _listenPort { get; set; }
+
+        public LoadBalancerRunner(IHealthChecker healthChecker, IRoutingStrategy routingStrategy, ILogger<LoadBalancerRunner> logger, IConfiguration config, ITcpClientFactory tcpClientFactory, ITcpListenerFactory tcpListenerFactory)
         {
             _healthChecker = healthChecker;
             _routingStrategy = routingStrategy;
             _logger = logger;
             _config = config;
+            _tcpClientFactory = tcpClientFactory;
+            _tcpListenerFactory = tcpListenerFactory;
 
             _listenPort = _config.GetValue<int>("ListenPort");
-            _allBackends = _config.GetSection("BackendNodes").Get<List<BackendNode>>() ?? new List<BackendNode>();
+            _allBackends = _config.GetSection("BackendNodes").Get<List<BackendNode>>() ?? new();
             _healthCheckLoopDelay = _config.GetValue<int>("HealthCheckDelay");
         }
+
 
         public async Task RunAsync(CancellationToken ct = default)
         {
@@ -36,7 +43,7 @@ namespace LoadBalancer
 
             _ = Task.Run(() => HealthCheckLoop(ct), ct);
 
-            var listener = new TcpListener(System.Net.IPAddress.Any, _listenPort);
+            var listener = _tcpListenerFactory.Create(_listenPort);
             listener.Start();
             _logger.LogInformation("Load Balancer started on port {portNumer}.", _listenPort);
 
@@ -47,7 +54,7 @@ namespace LoadBalancer
                     if(listener.Pending())
                     {
                         var client = await listener.AcceptTcpClientAsync();
-                        _logger.LogInformation("Accepted connection from {clientEndpoint}.", client.Client.RemoteEndPoint);
+                        _logger.LogInformation("Accepted connection from {clientEndpoint}.", client.RemoteEndPoint);
 
                         _ = Task.Run(() => HandleClientAsync(client, ct), ct);
                     }
@@ -90,7 +97,7 @@ namespace LoadBalancer
                 await Task.Delay(TimeSpan.FromSeconds(_healthCheckLoopDelay), ct);
             }
         }
-        private async Task HandleClientAsync(TcpClient client, CancellationToken ct)
+        private async Task HandleClientAsync(ITcpClient client, CancellationToken ct)
         {
             var currentBackends = _healthyBackends;
             BackendNode? backend = _routingStrategy.SelectNext(currentBackends);
@@ -102,7 +109,7 @@ namespace LoadBalancer
                 return;
             }
 
-            TcpClient backendClient = new TcpClient();
+            var backendClient = _tcpClientFactory.Create();
             try
             {
                 await backendClient.ConnectAsync(backend.Host, backend.Port);

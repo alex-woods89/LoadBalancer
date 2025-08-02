@@ -17,7 +17,7 @@ namespace LoadBalancer.Services
         {
             var healthy = new List<BackendNode>();
 
-            nodes = FilterMaintenanceMode(nodes);
+            nodes = RemoveInactiveNodes(nodes);
 
             foreach (var node in nodes)
             {
@@ -30,6 +30,6 @@ namespace LoadBalancer.Services
             return healthy;
         }
 
-        private List<BackendNode> FilterMaintenanceMode(List<BackendNode> nodes) => nodes.Where(n => !n.MaintenanceMode).ToList();
+        private List<BackendNode> RemoveInactiveNodes(List<BackendNode> nodes) => nodes.Where(n => !n.IsDeactivated).ToList();
     }
 }

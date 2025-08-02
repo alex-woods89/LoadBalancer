@@ -26,10 +26,11 @@ services.AddLogging(config =>
 services.AddTransient<ITcpClientFactory, TcpClientFactory>();
 services.AddTransient<IHealthChecker, TcpHealthChecker>();
 services.AddTransient<IRoutingStrategy, RoundRobinRouter>();
-services.AddTransient<LoadBalancerRunner>();
+services.AddTransient<ITcpListenerFactory, TcpListenerFactory>();
+services.AddTransient<ILoadBalancerRunner, LoadBalancerRunner>();
 
 using var provider = services.BuildServiceProvider();
-var runner = provider.GetRequiredService<LoadBalancerRunner>();
+var runner = provider.GetRequiredService<ILoadBalancerRunner>();
 
 using var cts = new CancellationTokenSource();
 

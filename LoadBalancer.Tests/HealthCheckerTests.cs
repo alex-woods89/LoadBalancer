@@ -10,7 +10,7 @@ namespace LoadBalancer.Tests
         [Fact]
         public async Task HealthCheck_OnlyReturnsHealthyBackends()
         {
-            var servers = new List<BackendNode>
+            var backendNodes = new List<BackendNode>
             {
                 new("127.0.0.1", 1234),
                 new("127.0.0.1", 4321)
@@ -22,22 +22,22 @@ namespace LoadBalancer.Tests
             mockFactory.Setup(f => f.TryConnectAsync("127.0.0.1", 4321, 100, default)).Returns(Task.FromResult(false));
 
             var healthChecker = new TcpHealthChecker(mockFactory.Object, 100);
-            var result = await healthChecker.GetHealthyNodesAsync(servers, default);
+            var result = await healthChecker.GetHealthyNodesAsync(backendNodes, default);
 
             Assert.Single(result);
             Assert.Equal(1234, result[0].Port);
         }
 
         [Fact]
-        public async Task HealthCheck_OnlyReturnsHealthyBackendsNotInMaintenanceMode()
+        public async Task HealthCheck_OnlyReturnsActiveHealthyBackends()
         {
-            var servers = new List<BackendNode>
+            var backendNodes = new List<BackendNode>
             {
                 new("127.0.0.1", 1234),
                 new("127.0.0.1", 4321)
             };
 
-            servers[0].MaintenanceMode = true;
+            backendNodes[0].IsDeactivated = true;
 
             var mockFactory = new Mock<ITcpClientFactory>();
 
@@ -46,7 +46,7 @@ namespace LoadBalancer.Tests
             mockFactory.Setup(f => f.TryConnectAsync("127.0.0.1", 4321, 100, default)).Returns(Task.FromResult(true));
 
             var healthChecker = new TcpHealthChecker(mockFactory.Object, 100);
-            var result = await healthChecker.GetHealthyNodesAsync(servers, default);
+            var result = await healthChecker.GetHealthyNodesAsync(backendNodes, default);
 
             Assert.Single(result);
             Assert.Equal(4321, result[0].Port);

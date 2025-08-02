@@ -1,4 +1,5 @@
 ﻿using LoadBalancer.Interfaces;
+using LoadBalancer.Wrapper;
 using System.Net.Sockets;
 
 namespace LoadBalancer.Factories
@@ -15,5 +16,7 @@ namespace LoadBalancer.Factories
 
             return completed == connectTask && client.Connected;
         }
+
+        public ITcpClient Create() => new TcpClientWrapper();
     }
 }

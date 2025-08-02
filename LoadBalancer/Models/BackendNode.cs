@@ -4,13 +4,13 @@
     {
         public string Host { get; set; }
         public int Port { get; set; }
-        public bool MaintenanceMode { get; set; }
+        public bool IsDeactivated { get; set; }
 
-        public BackendNode(string host, int port, bool maintenanceMode = false)
+        public BackendNode(string host, int port, bool isDeactivated = false)
         {
             Host = host;
             Port = port;
-            MaintenanceMode = maintenanceMode;
+            IsDeactivated = isDeactivated;
         }
     }
 }
