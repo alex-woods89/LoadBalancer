@@ -22,7 +22,7 @@ namespace LoadBalancer.Tests
             for(int i = 0; i < 5; i++)
             {
                 var selectedNode = router.SelectNext(backendNodes);
-                selections.Add(selectedNode);
+                selections.Add(selectedNode!);
             }
 
             Assert.Equal(backendNodes[0], selections[0]);

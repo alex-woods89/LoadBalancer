@@ -19,6 +19,7 @@ namespace LoadBalancer.Tests
             var mockTcpListener = new Mock<ITcpListener>();
             var mockTcpClientFactory = new Mock<ITcpClientFactory>();
             var mockTcpListenerFactory = new Mock<ITcpListenerFactory>();
+            var mockBackendNodeRepository = new Mock<IBackendNodeRepository>();
             var mockClient = new Mock<ITcpClient>();
             var mockBackend = new Mock<ITcpClient>();
 
@@ -32,18 +33,15 @@ namespace LoadBalancer.Tests
             {
                 new KeyValuePair<string, string>("ListenPort", "9000"),
                 new KeyValuePair<string, string>("HealthCheckDelay", "1"),
-                new KeyValuePair<string, string>("BackendNodes:0:Host", "127.0.0.1"),
-                new KeyValuePair<string, string>("BackendNodes:0:Port", "8080")
             };
 
             var fakeConfig = new ConfigurationBuilder()
                 .AddInMemoryCollection(configData)
                 .Build();
 
-            // Setup health checker returns healthy backend
-            mockHealthChecker
-                .Setup(h => h.GetHealthyNodesAsync(It.IsAny<List<BackendNode>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(backendNodes);
+            mockBackendNodeRepository
+                .Setup(repo => repo.GetBackendNodes())
+                .Returns(backendNodes);
 
             // Setup routing strategy selects our backend
             mockRoutingStrategy
@@ -87,7 +85,8 @@ namespace LoadBalancer.Tests
                 new NullLogger<LoadBalancerRunner>(),
                 fakeConfig,
                 mockTcpClientFactory.Object,
-                mockTcpListenerFactory.Object
+                mockTcpListenerFactory.Object,
+                mockBackendNodeRepository.Object
             );
 
             await runner.RunAsync(cts.Token);

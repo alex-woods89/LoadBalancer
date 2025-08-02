@@ -1,6 +1,7 @@
 ﻿using LoadBalancer.Factories;
 using LoadBalancer.Interfaces;
 using LoadBalancer.Models;
+using LoadBalancer.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net.Sockets;
@@ -15,14 +16,14 @@ namespace LoadBalancer
         private readonly IConfiguration _config;
         private readonly ITcpClientFactory _tcpClientFactory;
         private readonly ITcpListenerFactory _tcpListenerFactory;
-
+        private readonly IBackendNodeRepository _backendNodeRepository;
         private int _healthCheckLoopDelay;
 
         private readonly List<BackendNode> _allBackends;
         private volatile List<BackendNode> _healthyBackends = [];
         private int _listenPort { get; set; }
 
-        public LoadBalancerRunner(IHealthChecker healthChecker, IRoutingStrategy routingStrategy, ILogger<LoadBalancerRunner> logger, IConfiguration config, ITcpClientFactory tcpClientFactory, ITcpListenerFactory tcpListenerFactory)
+        public LoadBalancerRunner(IHealthChecker healthChecker, IRoutingStrategy routingStrategy, ILogger<LoadBalancerRunner> logger, IConfiguration config, ITcpClientFactory tcpClientFactory, ITcpListenerFactory tcpListenerFactory, IBackendNodeRepository backendNodeRepository)
         {
             _healthChecker = healthChecker;
             _routingStrategy = routingStrategy;
@@ -30,9 +31,10 @@ namespace LoadBalancer
             _config = config;
             _tcpClientFactory = tcpClientFactory;
             _tcpListenerFactory = tcpListenerFactory;
+            _backendNodeRepository = backendNodeRepository;
 
+            _allBackends = _backendNodeRepository.GetBackendNodes();
             _listenPort = _config.GetValue<int>("ListenPort");
-            _allBackends = _config.GetSection("BackendNodes").Get<List<BackendNode>>() ?? new();
             _healthCheckLoopDelay = _config.GetValue<int>("HealthCheckDelay");
         }
 

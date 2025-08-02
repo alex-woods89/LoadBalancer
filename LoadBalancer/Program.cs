@@ -1,7 +1,7 @@
 ﻿using LoadBalancer;
 using LoadBalancer.Factories;
 using LoadBalancer.Interfaces;
-using LoadBalancer.Models;
+using LoadBalancer.Repositories;
 using LoadBalancer.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,9 +15,6 @@ var configuration = new ConfigurationBuilder()
 
 services.AddSingleton<IConfiguration>(configuration);
 
-var backendNodes = configuration.GetSection("BackendNodes").Get<List<BackendNode>>();
-services.AddSingleton(backendNodes);
-
 services.AddLogging(config =>
 {
     config.AddConsole(); // Could change this to log to a file, or use something like Serilog
@@ -27,6 +24,7 @@ services.AddTransient<ITcpClientFactory, TcpClientFactory>();
 services.AddTransient<IHealthChecker, TcpHealthChecker>();
 services.AddTransient<IRoutingStrategy, RoundRobinRouter>();
 services.AddTransient<ITcpListenerFactory, TcpListenerFactory>();
+services.AddTransient<IBackendNodeRepository, BackendNodeRepository>();
 services.AddTransient<ILoadBalancerRunner, LoadBalancerRunner>();
 
 using var provider = services.BuildServiceProvider();
